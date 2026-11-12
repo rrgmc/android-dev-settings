@@ -56,6 +56,8 @@
     <string name="notification_title">Keeping the screen on</string>
     <string name="notification_indefinite">Until you stop it</string>
     <string name="stop">Stop</string>
-    <string name="quest_keep_awake_unsupported">Stay awake and Keep screen on are hidden on Meta Quest. The headset sleeps when you take it off, whatever these settings say.</string>
+    <string name="keep_headset_awake">Keep headset awake</string>
+    <string name="keep_headset_awake_detail">Keeps the headset awake when you take it off, by overriding the proximity sensor. Uses more battery.</string>
+    <string name="notification_title_quest">Keeping the headset awake</string>
     <string name="keep_screen_on_detail">Holds the screen on, charging or not.</string>
 </resources>
