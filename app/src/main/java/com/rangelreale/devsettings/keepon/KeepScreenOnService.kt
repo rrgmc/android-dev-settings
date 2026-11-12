@@ -20,17 +20,32 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.rangelreale.devsettings.MainActivity
 import com.rangelreale.devsettings.R
+import com.rangelreale.devsettings.data.DevicePlatform
+import com.rangelreale.devsettings.data.ProximityOverride
 import com.rangelreale.devsettings.tiles.KeepScreenOnTileService
 
 /**
  * Holds a screen wake lock for a chosen duration, with an ongoing notification
  * that counts down and offers a Stop action.
+ *
+ * On a Meta Quest the wake lock is not enough, because the proximity sensor puts the headset to
+ * sleep when it is taken off. There the service also overrides the sensor with [ProximityOverride]
+ * and hands control back when it stops. If the process is killed without [onDestroy], the override
+ * lasts until it lapses or the headset restarts.
  */
 class KeepScreenOnService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var wakeLock: PowerManager.WakeLock? = null
     private val stopRunnable = Runnable { stopSelf() }
+    private val platform by lazy { DevicePlatform.detect(packageManager::hasSystemFeature) }
+    private var proximityOverridden = false
+    private val renewProximityRunnable = object : Runnable {
+        override fun run() {
+            sendProximityOverride(keepAwake = true)
+            handler.postDelayed(this, ProximityOverride.RENEW_INTERVAL_MILLIS)
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -60,6 +75,11 @@ class KeepScreenOnService : Service() {
         acquireWakeLock(duration.millis)
         handler.removeCallbacks(stopRunnable)
         duration.millis?.let { handler.postDelayed(stopRunnable, it) }
+        if (platform.needsProximityOverride) {
+            handler.removeCallbacks(renewProximityRunnable)
+            renewProximityRunnable.run()
+            proximityOverridden = true
+        }
 
         KeepScreenOnState.set(status)
         refreshTile()
@@ -68,6 +88,11 @@ class KeepScreenOnService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacks(stopRunnable)
+        handler.removeCallbacks(renewProximityRunnable)
+        if (proximityOverridden) {
+            sendProximityOverride(keepAwake = false)
+            proximityOverridden = false
+        }
         releaseWakeLock()
         KeepScreenOnState.set(null)
         refreshTile()
@@ -96,6 +121,11 @@ class KeepScreenOnService : Service() {
         wakeLock = null
     }
 
+    // The receivers are registered at run time inside the system, so the broadcast stays implicit.
+    private fun sendProximityOverride(keepAwake: Boolean) {
+        sendBroadcast(Intent(ProximityOverride.action(keepAwake)))
+    }
+
     private fun buildNotification(status: KeepScreenOnStatus): Notification {
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
@@ -121,7 +151,11 @@ class KeepScreenOnService : Service() {
 
         val builder = Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_screen)
-            .setContentTitle(getString(R.string.notification_title))
+            .setContentTitle(
+                getString(
+                    if (platform.needsProximityOverride) R.string.notification_title_quest else R.string.notification_title,
+                ),
+            )
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setContentIntent(openApp)

@@ -111,8 +111,14 @@ The app recognises a Quest by the `oculus.hardware.standalone_vr` system feature
 
 - USB debugging and wireless debugging work. Turning on wireless debugging opens the Quest's own dialog asking to
   allow the network, and the app shows the address for `adb connect`.
-- Stay awake and Keep screen on are hidden. The proximity sensor puts the headset to sleep about 20 seconds after
-  it is taken off, and neither setting prevents that.
+- The proximity sensor puts the headset to sleep about 20 seconds after it is taken off. Neither Stay awake nor a
+  screen wake lock prevents that, so Stay awake is hidden.
+- Keep screen on becomes "Keep headset awake". Besides the wake lock, it sends the
+  `com.oculus.vrpowermanager.prox_close` broadcast, which makes the headset act as if it is worn. This is the
+  same override that the Proximity Sensor switch in Meta Quest Developer Hub uses, and it needs no permission. The
+  app sends it again every minute, and sends `com.oculus.vrpowermanager.automation_disable` when the time runs out
+  or you stop it. The headset uses more battery while the sensor is overridden. If Android kills the app first, the
+  override stays on until it lapses or the headset restarts.
 - The warning that Developer options are off is hidden. The Quest does not set `development_settings_enabled`;
   developer mode is turned on in the Meta Horizon app instead.
 - Quick Settings tiles are not available, because Horizon OS has no Quick Settings panel for them.

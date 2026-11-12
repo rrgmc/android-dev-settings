@@ -219,7 +219,8 @@ fun MainScreen(repository: DevSettingsRepository) {
                     onCopy = ::copy,
                     onOpenPairing = { SystemScreens.openWirelessDebugging(context) },
                 )
-                if (platform.supportsKeepAwake) {
+                // On a Quest the proximity sensor overrides this setting, so the row is left out.
+                if (platform.supportsStayAwake) {
                     HorizontalDivider()
                     val stayAwake = snapshot.enabled.getValue(DevSetting.STAY_AWAKE)
                     SettingRow(
@@ -229,20 +230,13 @@ fun MainScreen(repository: DevSettingsRepository) {
                         onCheckedChange = { onSwitch(DevSetting.STAY_AWAKE, it) },
                         stateText = if (stayAwake) stringResource(R.string.stay_awake_on_detail) else null,
                     )
-                    HorizontalDivider()
-                    KeepScreenOnSection(
-                        status = keepOnStatus,
-                        enabled = snapshot.hasPermission,
-                        onStartFailed = { showMessage(context.getString(R.string.keep_screen_on_failed)) },
-                    )
                 }
-            }
-
-            if (!platform.supportsKeepAwake) {
-                Text(
-                    stringResource(R.string.quest_keep_awake_unsupported),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                HorizontalDivider()
+                KeepScreenOnSection(
+                    status = keepOnStatus,
+                    platform = platform,
+                    enabled = snapshot.hasPermission,
+                    onStartFailed = { showMessage(context.getString(R.string.keep_screen_on_failed)) },
                 )
             }
 
@@ -427,9 +421,11 @@ private fun WirelessDetails(
 @Composable
 private fun KeepScreenOnSection(
     status: KeepScreenOnStatus?,
+    platform: DevicePlatform,
     enabled: Boolean,
     onStartFailed: () -> Unit,
 ) {
+    val quest = platform.needsProximityOverride
     val context = LocalContext.current
     var selected by rememberSaveable { mutableStateOf(KeepScreenOnDuration.MIN_15) }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -461,14 +457,17 @@ private fun KeepScreenOnSection(
 
     RowItem(
         icon = R.drawable.ic_screen,
-        title = stringResource(R.string.keep_screen_on),
+        title = stringResource(if (quest) R.string.keep_headset_awake else R.string.keep_screen_on),
         state = stateText,
         checked = status != null,
         enabled = enabled,
         onCheckedChange = { on -> if (on) start(selected) else KeepScreenOnService.stop(context) },
     )
     Column(Modifier.padding(start = 56.dp, end = 16.dp, bottom = 12.dp)) {
-        Text(stringResource(R.string.keep_screen_on_detail), style = MaterialTheme.typography.bodySmall)
+        Text(
+            stringResource(if (quest) R.string.keep_headset_awake_detail else R.string.keep_screen_on_detail),
+            style = MaterialTheme.typography.bodySmall,
+        )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             KeepScreenOnDuration.entries.forEach { duration ->
                 val isSelected = (status?.duration ?: selected) == duration

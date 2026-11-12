@@ -22,9 +22,26 @@ class DevicePlatformTest {
     }
 
     @Test
-    fun onlyPhoneSupportsKeepAwake() {
-        assertTrue(DevicePlatform.PHONE.supportsKeepAwake)
-        assertFalse(DevicePlatform.META_QUEST.supportsKeepAwake)
+    fun onlyPhoneSupportsStayAwake() {
+        assertTrue(DevicePlatform.PHONE.supportsStayAwake)
+        assertFalse(DevicePlatform.META_QUEST.supportsStayAwake)
+    }
+
+    @Test
+    fun onlyQuestNeedsProximityOverride() {
+        assertFalse(DevicePlatform.PHONE.needsProximityOverride)
+        assertTrue(DevicePlatform.META_QUEST.needsProximityOverride)
+    }
+
+    @Test
+    fun proximityOverrideActions() {
+        assertEquals("com.oculus.vrpowermanager.prox_close", ProximityOverride.action(keepAwake = true))
+        assertEquals("com.oculus.vrpowermanager.automation_disable", ProximityOverride.action(keepAwake = false))
+    }
+
+    @Test
+    fun proximityOverrideRenewsWellBeforeItLapses() {
+        assertTrue(ProximityOverride.RENEW_INTERVAL_MILLIS in 1..5 * 60_000L)
     }
 
     @Test
