@@ -66,11 +66,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rangelreale.devsettings.R
 import com.rangelreale.devsettings.SystemScreens
 import com.rangelreale.devsettings.data.DevSetting
+import com.rangelreale.devsettings.data.DevicePlatform
 import com.rangelreale.devsettings.data.DevSettingsRepository
 import com.rangelreale.devsettings.data.GlobalKeys
 import com.rangelreale.devsettings.data.WirelessDebugInfo
 import com.rangelreale.devsettings.data.WriteResult
 import com.rangelreale.devsettings.data.grantCommand
+import com.rangelreale.devsettings.data.shouldWarnDeveloperOptionsOff
 import com.rangelreale.devsettings.keepon.KeepScreenOnDuration
 import com.rangelreale.devsettings.keepon.KeepScreenOnService
 import com.rangelreale.devsettings.keepon.KeepScreenOnState
@@ -83,13 +85,13 @@ import kotlinx.coroutines.launch
 /** Values read from the system on each refresh. */
 private data class Snapshot(
     val hasPermission: Boolean,
-    val developerOptions: Boolean,
+    val warnDeveloperOptionsOff: Boolean,
     val enabled: Map<DevSetting, Boolean>,
 )
 
-private fun DevSettingsRepository.snapshot() = Snapshot(
+private fun DevSettingsRepository.snapshot(platform: DevicePlatform) = Snapshot(
     hasPermission = hasPermission(),
-    developerOptions = developerOptionsEnabled(),
+    warnDeveloperOptionsOff = shouldWarnDeveloperOptionsOff(platform),
     enabled = DevSetting.entries.associateWith { isEnabled(it) },
 )
 
@@ -114,10 +116,11 @@ fun MainScreen(repository: DevSettingsRepository) {
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
-    var snapshot by remember { mutableStateOf(repository.snapshot()) }
+    val platform = remember { DevicePlatform.detect(context.packageManager::hasSystemFeature) }
+    var snapshot by remember { mutableStateOf(repository.snapshot(platform)) }
     var resumeCount by remember { mutableIntStateOf(0) }
     fun refresh() {
-        snapshot = repository.snapshot()
+        snapshot = repository.snapshot(platform)
     }
 
     // Re-read on every resume: values may have changed while the app was in the background.
@@ -190,9 +193,9 @@ fun MainScreen(repository: DevSettingsRepository) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (!snapshot.hasPermission) {
-                SetupCard(command = grantCommand(context.packageName), onCopy = ::copy)
+                SetupCard(command = grantCommand(context.packageName), platform = platform, onCopy = ::copy)
             }
-            if (!snapshot.developerOptions) {
+            if (snapshot.warnDeveloperOptionsOff) {
                 DeveloperOptionsCard(onOpenAboutPhone = { SystemScreens.openAboutPhone(context) })
             }
 
@@ -216,20 +219,30 @@ fun MainScreen(repository: DevSettingsRepository) {
                     onCopy = ::copy,
                     onOpenPairing = { SystemScreens.openWirelessDebugging(context) },
                 )
-                HorizontalDivider()
-                val stayAwake = snapshot.enabled.getValue(DevSetting.STAY_AWAKE)
-                SettingRow(
-                    setting = DevSetting.STAY_AWAKE,
-                    checked = stayAwake,
-                    enabled = snapshot.hasPermission,
-                    onCheckedChange = { onSwitch(DevSetting.STAY_AWAKE, it) },
-                    stateText = if (stayAwake) stringResource(R.string.stay_awake_on_detail) else null,
-                )
-                HorizontalDivider()
-                KeepScreenOnSection(
-                    status = keepOnStatus,
-                    enabled = snapshot.hasPermission,
-                    onStartFailed = { showMessage(context.getString(R.string.keep_screen_on_failed)) },
+                if (platform.supportsKeepAwake) {
+                    HorizontalDivider()
+                    val stayAwake = snapshot.enabled.getValue(DevSetting.STAY_AWAKE)
+                    SettingRow(
+                        setting = DevSetting.STAY_AWAKE,
+                        checked = stayAwake,
+                        enabled = snapshot.hasPermission,
+                        onCheckedChange = { onSwitch(DevSetting.STAY_AWAKE, it) },
+                        stateText = if (stayAwake) stringResource(R.string.stay_awake_on_detail) else null,
+                    )
+                    HorizontalDivider()
+                    KeepScreenOnSection(
+                        status = keepOnStatus,
+                        enabled = snapshot.hasPermission,
+                        onStartFailed = { showMessage(context.getString(R.string.keep_screen_on_failed)) },
+                    )
+                }
+            }
+
+            if (!platform.supportsKeepAwake) {
+                Text(
+                    stringResource(R.string.quest_keep_awake_unsupported),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
 
@@ -263,7 +276,7 @@ fun MainScreen(repository: DevSettingsRepository) {
 }
 
 @Composable
-private fun SetupCard(command: String, onCopy: (String) -> Unit) {
+private fun SetupCard(command: String, platform: DevicePlatform, onCopy: (String) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
@@ -271,7 +284,11 @@ private fun SetupCard(command: String, onCopy: (String) -> Unit) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.setup_title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.setup_body))
-            Text(stringResource(R.string.setup_step_1))
+            Text(
+                stringResource(
+                    if (platform == DevicePlatform.META_QUEST) R.string.setup_step_1_quest else R.string.setup_step_1,
+                ),
+            )
             Text(stringResource(R.string.setup_step_2))
             Surface(
                 color = MaterialTheme.colorScheme.surface,
