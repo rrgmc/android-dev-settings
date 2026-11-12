@@ -6,6 +6,14 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Release CI passes the tag without its "v" prefix: -PappVersion=1.2.3
+val appVersion = providers.gradleProperty("appVersion").orNull ?: "0.1.0"
+val appVersionCode = appVersion.substringBefore('-').split('.').map { it.toInt() }
+    .let { (major, minor, patch) -> major * 10_000 + minor * 100 + patch }
+
+// Release signing comes from environment variables. Without them, release builds use the debug key.
+val releaseStoreFile: String? = System.getenv("SIGNING_STORE_FILE")
+
 android {
     namespace = "com.rangelreale.devsettings"
     compileSdk = 36
@@ -14,15 +22,25 @@ android {
         applicationId = "com.rangelreale.devsettings"
         minSdk = 30
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = appVersionCode
+        versionName = appVersion
+    }
+
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Personal sideloaded build: sign with the debug key so `assembleRelease` installs directly.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
