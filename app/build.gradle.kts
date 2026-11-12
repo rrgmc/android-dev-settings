@@ -34,6 +34,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    lint {
+        // targetSdk 36 and the library versions are pinned on purpose; newer ones need compileSdk 37.
+        disable += setOf("OldTargetApi", "GradleDependency")
+        warningsAsErrors = true
+    }
 }
 
 kotlin {

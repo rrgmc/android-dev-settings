@@ -8,8 +8,8 @@
     <string name="stay_awake_long">Stay awake while charging</string>
     <string name="keep_screen_on">Keep screen on</string>
 
-    <string name="state_on">On</string>
-    <string name="state_off">Off</string>
+    <string name="status_on">On</string>
+    <string name="status_off">Off</string>
     <string name="state_on_until_stopped">On until stopped</string>
     <string name="state_on_time_left">On, %1$s left</string>
     <string name="stay_awake_on_detail">On for AC, USB and wireless charging</string>
