@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dev Settings</string>
+
+    <string name="usb_debugging">USB debugging</string>
+    <string name="wireless_debugging">Wireless debugging</string>
+    <string name="stay_awake">Stay awake</string>
+    <string name="stay_awake_long">Stay awake while charging</string>
+    <string name="keep_screen_on">Keep screen on</string>
+
+    <string name="state_on">On</string>
+    <string name="state_off">Off</string>
+    <string name="state_on_until_stopped">On until stopped</string>
+    <string name="state_on_time_left">On, %1$s left</string>
+    <string name="stay_awake_on_detail">On for AC, USB and wireless charging</string>
+    <string name="tile_setup_needed">Setup needed</string>
+    <string name="tile_time_left">%1$s left</string>
+
+    <string name="duration_5_min">5 min</string>
+    <string name="duration_15_min">15 min</string>
+    <string name="duration_30_min">30 min</string>
+    <string name="duration_1_hour">1 hour</string>
+    <string name="duration_indefinite">Until stopped</string>
+
+    <string name="setup_title">One-time setup</string>
+    <string name="setup_body">This app needs the WRITE_SECURE_SETTINGS permission. Only a computer can grant it.</string>
+    <string name="setup_step_1">1. Turn on USB debugging in Developer options, then connect the phone to a computer.</string>
+    <string name="setup_step_2">2. On the computer, run this command:</string>
+    <string name="setup_step_3">3. Come back here. The switches turn on within a few seconds.</string>
+    <string name="copy_command">Copy command</string>
+    <string name="copied">Copied</string>
+
+    <string name="dev_options_title">Developer options are off</string>
+    <string name="dev_options_body">These settings have no effect until Developer options are on. Open About phone and tap Build number seven times. On some phones, Build number is under Software information.</string>
+    <string name="open_about_phone">Open About phone</string>
+
+    <string name="open_developer_options">Open Developer options</string>
+    <string name="open_wireless_debugging">Open wireless debugging (pairing)</string>
+    <string name="wireless_address">Address: %1$s</string>
+    <string name="wireless_port_searching">Looking for the debugging port…</string>
+    <string name="wireless_port_unknown">Port not found. The wireless debugging screen shows it.</string>
+    <string name="wireless_no_ip">No Wi-Fi address. Wireless debugging needs Wi-Fi.</string>
+    <string name="copy_connect">Copy adb connect</string>
+
+    <string name="confirm_disable_title">Turn off %1$s?</string>
+    <string name="confirm_disable_body">A computer connected through %1$s loses its connection.</string>
+    <string name="turn_off">Turn off</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="write_failed">Android rejected the change to %1$s.</string>
+    <string name="write_no_permission">Permission missing. Complete the setup first.</string>
+    <string name="keep_screen_on_failed">Could not start keep screen on.</string>
+
+    <string name="notification_channel">Keep screen on</string>
+    <string name="notification_title">Keeping the screen on</string>
+    <string name="notification_indefinite">Until you stop it</string>
+    <string name="stop">Stop</string>
+    <string name="keep_screen_on_detail">Holds the screen on, charging or not.</string>
+</resources>
