@@ -54,8 +54,9 @@ android {
     }
 
     lint {
-        // targetSdk 36 and the library versions are pinned on purpose; newer ones need compileSdk 37.
-        disable += setOf("OldTargetApi", "GradleDependency")
+        // targetSdk 36 and the tool and library versions are pinned on purpose; newer ones need compileSdk 37.
+        // These checks also look up versions online, so their result would change as new releases appear.
+        disable += setOf("OldTargetApi", "GradleDependency", "AndroidGradlePluginVersion", "NewerVersionAvailable")
         warningsAsErrors = true
     }
 }
