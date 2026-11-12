@@ -25,6 +25,7 @@
     <string name="setup_title">One-time setup</string>
     <string name="setup_body">This app needs the WRITE_SECURE_SETTINGS permission. Only a computer can grant it.</string>
     <string name="setup_step_1">1. Turn on USB debugging in Developer options, then connect the phone to a computer.</string>
+    <string name="setup_step_1_quest">1. Turn on developer mode for the headset in the Meta Horizon app, then connect the headset to a computer.</string>
     <string name="setup_step_2">2. On the computer, run this command:</string>
     <string name="setup_step_3">3. Come back here. The switches turn on within a few seconds.</string>
     <string name="copy_command">Copy command</string>
@@ -55,5 +56,6 @@
     <string name="notification_title">Keeping the screen on</string>
     <string name="notification_indefinite">Until you stop it</string>
     <string name="stop">Stop</string>
+    <string name="quest_keep_awake_unsupported">Stay awake and Keep screen on are hidden on Meta Quest. The headset sleeps when you take it off, whatever these settings say.</string>
     <string name="keep_screen_on_detail">Holds the screen on, charging or not.</string>
 </resources>

@@ -82,6 +82,19 @@ A foreground service holds a screen wake lock. Its ongoing notification counts d
 action. On Android 13 and later, the app asks for notification permission the first time; without it, the screen
 still stays on but the notification is hidden. The power button still turns the screen off.
 
+## Meta Quest
+
+The app also runs on Meta Quest headsets. It was tested on a Quest 3 with Horizon OS on Android 14. The app
+recognises a Quest by the `oculus.hardware.standalone_vr` system feature and changes as follows:
+
+- USB debugging and wireless debugging work. Turning on wireless debugging opens the Quest's own dialog asking to
+  allow the network, and the app shows the address for `adb connect`.
+- Stay awake and Keep screen on are hidden. The proximity sensor puts the headset to sleep about 20 seconds after
+  it is taken off, and neither setting prevents that.
+- The warning that Developer options are off is hidden. The Quest does not set `development_settings_enabled`;
+  developer mode is turned on in the Meta Horizon app instead.
+- Quick Settings tiles are not available, because Horizon OS has no Quick Settings panel for them.
+
 ## Releases
 
 CI runs on every pull request and every push to `master`: unit tests, lint and a debug build
