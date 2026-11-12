@@ -7,7 +7,7 @@ An Android app that toggles the developer settings I use most, without opening D
 - Stay awake while charging (AC, USB and wireless)
 - Keep screen on for a chosen time, charging or not
 
-The app is for my own phones. It is not published on the Play Store. It needs Android 11 (API 30) or later.
+The app is for my own phones and Meta Quest headset. It is not published on the Play Store. It needs Android 11 (API 30) or later.
 
 ## Build
 
@@ -84,8 +84,30 @@ still stays on but the notification is hidden. The power button still turns the 
 
 ## Meta Quest
 
-The app also runs on Meta Quest headsets. It was tested on a Quest 3 with Horizon OS on Android 14. The app
-recognises a Quest by the `oculus.hardware.standalone_vr` system feature and changes as follows:
+The app also runs on Meta Quest headsets. It was tested on a Quest 3 with Horizon OS on Android 14.
+
+### Set up a Quest
+
+1. Turn on developer mode. This needs a Meta developer account. In the Meta Horizon app on your phone, open the
+   headset's settings and turn on Developer mode. Restart the headset.
+2. Connect the headset to the computer with a USB cable. Put the headset on and allow USB debugging for this
+   computer.
+3. Install the app and grant the permission:
+
+   ```bash
+   adb install -r app/build/outputs/apk/debug/app-debug.apk
+   adb shell pm grant com.rangelreale.devsettings android.permission.WRITE_SECURE_SETTINGS
+   ```
+
+4. In the headset, open the Library, filter it by Unknown sources, and open Dev Settings. It opens as a flat panel.
+
+To use adb without the cable, run `adb tcpip 5555` while the cable is connected. Then disconnect it and run
+`adb connect <headset IP>:5555`. You can also turn on wireless debugging from the app: it shows the address for
+`adb connect`. That address only accepts a computer that is already paired.
+
+### Differences on a Quest
+
+The app recognises a Quest by the `oculus.hardware.standalone_vr` system feature and changes as follows:
 
 - USB debugging and wireless debugging work. Turning on wireless debugging opens the Quest's own dialog asking to
   allow the network, and the app shows the address for `adb connect`.
