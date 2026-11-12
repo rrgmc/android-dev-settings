@@ -17,6 +17,7 @@ class DevSettingsRepository(private val store: SettingsStore) {
         if (!hasPermission()) return WriteResult.MISSING_PERMISSION
         val value = if (enabled) setting.onValue else 0
         if (!store.putGlobalInt(setting.key, value)) return WriteResult.FAILED
+        if (!setting.verifyWrite) return WriteResult.SUCCESS
         return if (store.getGlobalInt(setting.key, -1) == value) WriteResult.SUCCESS else WriteResult.FAILED
     }
 

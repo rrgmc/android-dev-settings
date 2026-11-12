@@ -85,7 +85,13 @@ class DevSettingsRepositoryTest {
     @Test
     fun writeThatDoesNotStickReportsFailure() {
         store.overrideWrite = 0
-        assertEquals(WriteResult.FAILED, repo.setEnabled(DevSetting.WIRELESS_DEBUGGING, true))
+        assertEquals(WriteResult.FAILED, repo.setEnabled(DevSetting.USB_DEBUGGING, true))
+    }
+
+    @Test
+    fun wirelessDebuggingWaitingForNetworkApprovalIsNotAFailure() {
+        store.overrideWrite = 0 // the system keeps 0 while its "allow this network" dialog is open
+        assertEquals(WriteResult.SUCCESS, repo.setEnabled(DevSetting.WIRELESS_DEBUGGING, true))
     }
 
     @Test

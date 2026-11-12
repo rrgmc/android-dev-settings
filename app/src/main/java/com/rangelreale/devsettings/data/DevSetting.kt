@@ -6,12 +6,16 @@ package com.rangelreale.devsettings.data
  * The keys are literal strings so the logic runs in plain JVM unit tests.
  * They match the `Settings.Global` constants named in each comment.
  */
-enum class DevSetting(val key: String, val onValue: Int) {
+/**
+ * [verifyWrite] is false when Android may apply the value later. Turning on wireless debugging
+ * first shows a system dialog asking to allow the current network, so the value stays 0 until then.
+ */
+enum class DevSetting(val key: String, val onValue: Int, val verifyWrite: Boolean = true) {
     /** `Settings.Global.ADB_ENABLED`. */
     USB_DEBUGGING("adb_enabled", 1),
 
     /** `adb_wifi_enabled` (hidden constant `Settings.Global.ADB_WIFI_ENABLED`). */
-    WIRELESS_DEBUGGING("adb_wifi_enabled", 1),
+    WIRELESS_DEBUGGING("adb_wifi_enabled", 1, verifyWrite = false),
 
     /**
      * `Settings.Global.STAY_ON_WHILE_PLUGGED_IN`. The value is a bit mask:
