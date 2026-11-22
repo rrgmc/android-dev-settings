@@ -10,12 +10,17 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.provider.Settings
 import android.service.quicksettings.TileService
+import android.view.Gravity
+import android.view.View
+import android.view.WindowManager
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.rangelreale.devsettings.MainActivity
@@ -27,6 +32,11 @@ import com.rangelreale.devsettings.tiles.KeepScreenOnTileService
 /**
  * Holds a screen wake lock for a chosen duration, with an ongoing notification
  * that counts down and offers a Stop action.
+ *
+ * Some phones ignore the wake lock while another app is in front: Samsung's One UI logs
+ * "abuse wakelock" and lets the screen time out. When the app may draw over other apps, the
+ * service also shows an invisible overlay window with [WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON],
+ * which the window manager honours like a video player's window.
  *
  * On a Meta Quest the wake lock is not enough, because the proximity sensor puts the headset to
  * sleep when it is taken off. There the service also overrides the sensor with [ProximityOverride]
@@ -40,6 +50,7 @@ class KeepScreenOnService : Service() {
     private val stopRunnable = Runnable { stopSelf() }
     private val platform by lazy { DevicePlatform.detect(packageManager::hasSystemFeature) }
     private var proximityOverridden = false
+    private var overlay: View? = null
     private val renewProximityRunnable = object : Runnable {
         override fun run() {
             sendProximityOverride(keepAwake = true)
@@ -73,6 +84,7 @@ class KeepScreenOnService : Service() {
         )
 
         acquireWakeLock(duration.millis)
+        showOverlay()
         handler.removeCallbacks(stopRunnable)
         duration.millis?.let { handler.postDelayed(stopRunnable, it) }
         if (platform.needsProximityOverride) {
@@ -93,6 +105,7 @@ class KeepScreenOnService : Service() {
             sendProximityOverride(keepAwake = false)
             proximityOverridden = false
         }
+        removeOverlay()
         releaseWakeLock()
         KeepScreenOnState.set(null)
         refreshTile()
@@ -119,6 +132,37 @@ class KeepScreenOnService : Service() {
     private fun releaseWakeLock() {
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
+    }
+
+    /** Adds the keep-screen-on overlay when allowed and not already shown. */
+    private fun showOverlay() {
+        if (overlay != null || !Settings.canDrawOverlays(this)) return
+        val params = WindowManager.LayoutParams(
+            1,
+            1,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            // Fully transparent, so Android lets touches pass through to the app below.
+            alpha = 0f
+            title = "DevSettings:KeepScreenOn"
+        }
+        val view = View(this)
+        try {
+            getSystemService(WindowManager::class.java).addView(view, params)
+            overlay = view
+        } catch (e: RuntimeException) {
+            // The permission was revoked between the check and the call. The wake lock still applies.
+        }
+    }
+
+    private fun removeOverlay() {
+        overlay?.let { getSystemService(WindowManager::class.java).removeView(it) }
+        overlay = null
     }
 
     // The receivers are registered at run time inside the system, so the broadcast stays implicit.

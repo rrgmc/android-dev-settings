@@ -60,4 +60,6 @@
     <string name="keep_headset_awake_detail">Keeps the headset awake when you take it off, by overriding the proximity sensor. Uses more battery.</string>
     <string name="notification_title_quest">Keeping the headset awake</string>
     <string name="keep_screen_on_detail">Holds the screen on, charging or not.</string>
+    <string name="overlay_needed">Some phones, such as Samsung, let the screen turn off while another app is in front. Allow this app to display over other apps to prevent that.</string>
+    <string name="allow_overlay">Allow display over other apps</string>
 </resources>

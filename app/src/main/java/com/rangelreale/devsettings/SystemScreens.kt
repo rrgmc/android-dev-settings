@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import androidx.core.net.toUri
 
 /** Intents into the system Settings app. */
 object SystemScreens {
@@ -32,6 +33,12 @@ object SystemScreens {
     }
 
     fun openAboutPhone(context: Context) = launch(context, Intent(Settings.ACTION_DEVICE_INFO_SETTINGS))
+
+    /** The "Display over other apps" switch for this app. */
+    fun openOverlayPermission(context: Context) = launch(
+        context,
+        Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri()),
+    )
 
     private fun launch(context: Context, intent: Intent) {
         try {
