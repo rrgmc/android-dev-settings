@@ -82,6 +82,11 @@ A foreground service holds a screen wake lock. Its ongoing notification counts d
 action. On Android 13 and later, the app asks for notification permission the first time; without it, the screen
 still stays on but the notification is hidden. The power button still turns the screen off.
 
+Some phones ignore the wake lock while another app is in front. Samsung's One UI lets the screen time out anyway.
+To prevent that, allow the app to display over other apps; the main screen has a button for it. While keep screen on
+runs, the app then also shows an invisible overlay that keeps the screen on, whichever app is in front. From a
+computer: `adb shell appops set com.rangelreale.devsettings SYSTEM_ALERT_WINDOW allow`.
+
 ## Meta Quest
 
 The app also runs on Meta Quest headsets. It was tested on a Quest 3 with Horizon OS on Android 14.

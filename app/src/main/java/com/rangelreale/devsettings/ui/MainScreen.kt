@@ -236,6 +236,7 @@ fun MainScreen(repository: DevSettingsRepository) {
                     status = keepOnStatus,
                     platform = platform,
                     enabled = snapshot.hasPermission,
+                    resumeCount = resumeCount,
                     onStartFailed = { showMessage(context.getString(R.string.keep_screen_on_failed)) },
                 )
             }
@@ -423,10 +424,13 @@ private fun KeepScreenOnSection(
     status: KeepScreenOnStatus?,
     platform: DevicePlatform,
     enabled: Boolean,
+    resumeCount: Int,
     onStartFailed: () -> Unit,
 ) {
     val quest = platform.needsProximityOverride
     val context = LocalContext.current
+    // Granted in system Settings, so check again whenever the app comes back.
+    val canDrawOverlays = remember(resumeCount) { Settings.canDrawOverlays(context) }
     var selected by rememberSaveable { mutableStateOf(KeepScreenOnDuration.MIN_15) }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
@@ -468,6 +472,13 @@ private fun KeepScreenOnSection(
             stringResource(if (quest) R.string.keep_headset_awake_detail else R.string.keep_screen_on_detail),
             style = MaterialTheme.typography.bodySmall,
         )
+        // The headset needs the proximity override instead, which works without the overlay.
+        if (!quest && !canDrawOverlays) {
+            Text(stringResource(R.string.overlay_needed), style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = { SystemScreens.openOverlayPermission(context) }) {
+                Text(stringResource(R.string.allow_overlay))
+            }
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             KeepScreenOnDuration.entries.forEach { duration ->
                 val isSelected = (status?.duration ?: selected) == duration
