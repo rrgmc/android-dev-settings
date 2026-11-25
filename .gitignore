@@ -6,3 +6,9 @@ local.properties
 .kotlin/
 captures/
 .cxx/
+
+# personal-rules: worktrees and machine-local notes never get committed.
+.claude/worktrees/
+.claude/settings.local.json
+CLAUDE.local.md
+local/
