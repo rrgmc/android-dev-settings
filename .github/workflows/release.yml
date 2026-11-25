@@ -1,16 +1,29 @@
 name: Release
 
-# Push a version tag to publish a signed APK, for example:
+# Push a version tag from master to publish a signed APK, for example:
 #   git tag v1.2.0 && git push origin v1.2.0
+# A tag vX.Y.Z-rc.N is published as a prerelease. The notes are the version's CHANGELOG.md
+# section, or GitHub's generated notes when there is none.
+run-name: Release ${{ github.ref_name }}
+
 on:
   push:
-    tags: ["v*.*.*"]
+    tags: ['v[0-9]*.[0-9]*.[0-9]*']
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  # The tag is vX.Y.Z or vX.Y.Z-<prerelease> and its commit is on master.
+  check:
+    uses: RangelReale/personal-ai-rules/.github/workflows/release-check.yml@v0.5.1
+
+  build:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -38,16 +51,34 @@ jobs:
           SIGNING_STORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ vars.RELEASE_KEY_ALIAS || 'rrgmc' }}
           SIGNING_KEY_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-        run: ./gradlew testDebugUnitTest lintDebug assembleRelease -PappVersion="${GITHUB_REF_NAME#v}"
-
-      - name: Publish GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          apk="android-dev-settings-${GITHUB_REF_NAME}.apk"
-          cp app/build/outputs/apk/release/app-release.apk "$apk"
-          gh release create "$GITHUB_REF_NAME" "$apk" --title "$GITHUB_REF_NAME" --generate-notes
+          VERSION: ${{ needs.check.outputs.version }}
+        run: ./gradlew testDebugUnitTest lintDebug assembleRelease -PappVersion="$VERSION"
 
       - name: Remove keystore
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: Name the APK
+        env:
+          TAG: ${{ needs.check.outputs.tag }}
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/android-dev-settings-$TAG.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: dist/
+          if-no-files-found: error
+
+  # Attaches the release-* artifacts and a SHA256SUMS.txt.
+  publish:
+    needs: [check, build]
+    permissions:
+      contents: write
+    uses: RangelReale/personal-ai-rules/.github/workflows/release-publish.yml@v0.5.1
+    with:
+      tag: ${{ needs.check.outputs.tag }}
+      version: ${{ needs.check.outputs.version }}
+      prerelease: ${{ needs.check.outputs.prerelease }}
+      title: ${{ needs.check.outputs.tag }}

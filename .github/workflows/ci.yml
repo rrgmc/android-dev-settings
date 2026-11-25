@@ -1,16 +1,34 @@
 name: CI
 
+# Pull request runs are titled "PR #<number>: <title>"; an empty run-name keeps GitHub's default.
+run-name: >-
+  ${{ github.event_name == 'pull_request'
+  && format('PR #{0}: {1}', github.event.pull_request.number, github.event.pull_request.title)
+  || '' }}
+
 on:
+  # labeled/unlabeled: adding the no-changelog label re-runs the changelog check.
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [master]
 
+permissions:
+  contents: read
+
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  test:
+  # docs, version or code: docs-only changes (*.md, docs/, LICENSE, editor settings) skip the build.
+  changes:
+    uses: RangelReale/personal-ai-rules/.github/workflows/changes.yml@v0.5.1
+
+  build:
+    name: Build
+    needs: changes
+    if: needs.changes.outputs.main == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -31,3 +49,28 @@ jobs:
         with:
           name: reports
           path: app/build/reports/
+
+  # Fragments in changelog.d/ (see its README), or the no-changelog label.
+  changelog:
+    needs: changes
+    if: github.event_name == 'pull_request'
+    uses: RangelReale/personal-ai-rules/.github/workflows/changelog-check.yml@v0.5.1
+    with:
+      kind: ${{ needs.changes.outputs.kind }}
+
+  # The only check branch protection requires (named "test"). Skipped jobs pass, so jobs can be
+  # added without touching the protection: list every other job in needs.
+  ci-result:
+    name: test
+    needs: [changes, build, changelog]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Results: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in success | skipped) ;; *) exit 1 ;; esac
+          done

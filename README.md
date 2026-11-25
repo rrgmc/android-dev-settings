@@ -135,7 +135,8 @@ CI runs on every pull request and every push to `master`: unit tests, lint and a
 
 Pushing a tag such as `v1.2.0` runs `.github/workflows/release.yml`. It tests, builds an APK signed with the
 release key, and publishes it as a GitHub release. The version name comes from the tag (`1.2.0`) and the version
-code is `major * 10000 + minor * 100 + patch`.
+code is `major * 10000 + minor * 100 + patch`. Tag only commits on `master`. A tag such as `v1.2.0-rc.1` is
+published as a prerelease. The release notes are the version's section of `CHANGELOG.md`.
 
 ```bash
 git tag v1.2.0
