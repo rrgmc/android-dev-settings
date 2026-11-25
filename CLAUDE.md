@@ -8,6 +8,8 @@ original specification.
 - `master` is protected. Every change reaches it through a pull request, and the `test` CI check must pass on
   the latest commit. Force pushes and deletion are blocked, and the rules also apply to administrators.
 - Work on a feature branch. Merge pull requests with a merge commit (not squash) and delete the branch.
+- A change users would notice adds a fragment in `changelog.d/` (see its README); never edit `CHANGELOG.md`
+  directly. Other pull requests get the `no-changelog` label, or the `changelog` CI job fails.
 - Releases are tags, not commits. Push `vX.Y.Z` from `master`; `.github/workflows/release.yml` builds the signed
   APK and publishes a GitHub release. The version name and code come from the tag, so do not edit them in
   `app/build.gradle.kts`.
